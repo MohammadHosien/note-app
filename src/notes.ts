@@ -10,12 +10,22 @@ interface NotesType {
   date: number;
 }
 
-const Toast = Swal.mixin({
+const SuccessToast = Swal.mixin({
   toast: true,
   position: "top-right",
   color: "#008000",
   iconColor: "green",
   icon: "info",
+  showConfirmButton: false,
+  timer: 1500,
+  timerProgressBar: true,
+});
+const ErrorToast = Swal.mixin({
+  toast: true,
+  position: "top-right",
+  color: "#ff0000",
+  iconColor: "red",
+  icon: "error",
   showConfirmButton: false,
   timer: 1500,
   timerProgressBar: true,
@@ -48,12 +58,12 @@ const editHandler = async (id: string) => {
       return [titleElement.value, dispriptionElement.value];
     },
     html: `
-          <input value=${note?.title} class="input border" id="title">
-          <textarea style="height:100px" id="description" class="input border mt-5">${note?.text}</textarea>
+          <input value=${note?.title} class="add_notes-inputs border" id="title">
+          <textarea style="height:100px" id="description" class="add_notes-inputs border mt-5">${note?.text}</textarea>
         `,
     focusConfirm: false,
   });
-  if (formValues) {
+  if (formValues[0] && formValues[1]) {
     document.querySelector("#notes_id")!.innerHTML = "";
     note!.text = formValues[1];
     note!.title = formValues[0];
@@ -61,7 +71,9 @@ const editHandler = async (id: string) => {
     notes.map((i) => {
       noteElement(i.text, i.title, i.id, i.date);
     });
-    Toast.fire("is succeesfully");
+    SuccessToast.fire("is succeesfully");
+  }else{
+    ErrorToast.fire("all input are require")
   }
 };
 
@@ -73,6 +85,7 @@ const removeHandler = (id: string) => {
     confirmButtonColor: "#1182ec",
     cancelButtonText: "CANCEL",
     cancelButtonColor: "red",
+    reverseButtons:true,
     confirmButtonText: "REMOVE",
   }).then((result) => {
     if (result.isConfirmed) {
@@ -82,7 +95,7 @@ const removeHandler = (id: string) => {
         noteElement(i.text, i.title, i.id, i.date);
       });
       localStorage.setItem("data", JSON.stringify(notes));
-      Toast.fire("SuccessFully removed");
+      SuccessToast.fire("SuccessFully removed");
       if (notes.length <= 0) {
         const emptyElement = document.createElement("div");
         emptyElement.innerHTML = "There is no notes";
@@ -103,6 +116,7 @@ const noteAlertHandler = async () => {
     cancelButtonColor: "#d33",
     confirmButtonColor: "#1182EC",
     confirmButtonText: "ADD NOTE",
+    reverseButtons: true,
     cancelButtonText: "CANCEL",
     preConfirm: () => {
       const titleElement = document.getElementById("title") as HTMLInputElement;
@@ -112,27 +126,29 @@ const noteAlertHandler = async () => {
       return [titleElement.value, dispriptionElement.value];
     },
     html: `
-          <input class="input border" id="title">
-          <textarea style="height:100px" id="description" class="input border mt-5">
+          <input placeholder="Note title:" class="add_notes-inputs" id="title">
+          <textarea placeholder="Note Body:" style="height:100px" id="description" class="add_notes-inputs mt-5"></textarea>
         `,
-    focusConfirm: false,
+    focusConfirm: true,
   });
-  if (formValues) {
-    Swal.fire(JSON.stringify(formValues));
+  if (formValues[0] && formValues[1]) {
     notes.push({
       id: id,
       date: date,
       text: formValues[1],
       title: formValues[0],
     });
-  }
-  document.querySelector("#notes_id")!.innerHTML = "";
-  notes.map((i) => {
-    noteElement(i.text, i.title, i.id, i.date);
-  });
-  localStorage.setItem("data", JSON.stringify(notes));
-  if (notes.length > 0) {
-    document.querySelector("#empty-state")!.remove();
+    document.querySelector("#notes_id")!.innerHTML = "";
+    notes.map((i) => {
+      noteElement(i.text, i.title, i.id, i.date);
+    });
+    localStorage.setItem("data", JSON.stringify(notes));
+    SuccessToast.fire("note added successfully");
+    if (notes.length > 0) {
+      document.querySelector("#empty-state")!.remove();
+    }
+  } else {
+    ErrorToast.fire("they are require");
   }
 };
 
@@ -176,10 +192,10 @@ const noteElement = (
   titleElement.style.marginTop = "30px";
   titleElement.innerHTML = text;
   const dateElement = document.createElement("div");
-  dateElement.style.marginTop="10px"
-  dateElement.style.fontSize="14px"
+  dateElement.style.marginTop = "10px";
+  dateElement.style.fontSize = "14px";
   const wrapper = document.createElement("div");
-  wrapper.className="note-container"
+  wrapper.className = "note-container";
   wrapper.appendChild(h1Element);
   wrapper.appendChild(dateElement);
   dateElement.innerHTML = moment(date).fromNow();
